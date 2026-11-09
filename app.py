@@ -34,13 +34,11 @@ plt.rcParams.update({
     'ytick.color': '#94a3b8'
 })
 
-# Custom CSS: Menyembunyikan Sidebar & Membuat Top Navigation Bar
+# Custom CSS: Menyembunyikan Sidebar & Formatting 8 Top Buttons
 st.markdown("""
 <style>
     /* Sembunyikan Sidebar Kiri */
-    [data-testid="stSidebar"] {
-        display: none !important;
-    }
+    [data-testid="stSidebar"] { display: none !important; }
     
     .stApp { background-color: #0b0f19 !important; color: #f8fafc; }
     
@@ -61,6 +59,16 @@ st.markdown("""
     .tb-status-badge {
         background-color: #064e3b; color: #34d399; padding: 6px 16px;
         border-radius: 20px; font-size: 12px; font-weight: 600; border: 1px solid #059669;
+    }
+    
+    /* Styling Tombol Navigasi */
+    div[data-testid="stButton"] button {
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        height: 48px;
+        white-space: normal;
+        word-wrap: break-word;
     }
     
     /* Card Styles */
@@ -102,7 +110,7 @@ def load_artifacts():
 ga_res, pso_res, comp_res, scaler = load_artifacts()
 
 # ---------------------------------------------------------
-# TOPBAR (HEADER ATAS & STATUS SYSTEM)
+# TOPBAR HEADER
 # ---------------------------------------------------------
 st.markdown("""
 <div class="tb-topbar">
@@ -116,19 +124,35 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# NAVIGASI MENU DI BAGIAN ATAS
-menu_options = [
-    "1.📌 Pipeline & System Overview",
-    "2.📊 Data Telemetry Explorer",
-    "3.🧬 Genetic Algorithm (GA) Detail",
-    "4.🐝 PSO Hyperparameter Detail",
-    "5.🧠 Neural Network (RNN) Architecture",
-    "6.🎛️ Fuzzy Logic Interpretability",
-    "7.🔮 Actuator & Simulation",
-    "8.📈 Benchmark Model Comparison"
+# ---------------------------------------------------------
+# NAVIGASI 8 TOMBOL TERPISAH DI BAGIAN ATAS
+# ---------------------------------------------------------
+if "active_menu" not in st.session_state:
+    st.session_state.active_menu = "1.📌 Pipeline & System Overview"
+
+menu_items = [
+    ("1.📌 Overview", "1.📌 Pipeline & System Overview"),
+    ("2.📊 Data Explorer", "2.📊 Data Telemetry Explorer"),
+    ("3.🧬 GA Detail", "3.🧬 Genetic Algorithm (GA) Detail"),
+    ("4.🐝 PSO Detail", "4.🐝 PSO Hyperparameter Detail"),
+    ("5.🧠 RNN Engine", "5.🧠 Neural Network (RNN) Architecture"),
+    ("6.🎛️ Fuzzy Logic", "6.🎛️ Fuzzy Logic Interpretability"),
+    ("7.🔮 Actuator & Sim", "7.🔮 Actuator & Simulation"),
+    ("8.📈 Model Comparison", "8.📈 Benchmark Model Comparison"),
 ]
 
-menu = st.selectbox("📂 Pilih Modul Dashboard / Telemetry Module:", menu_options, index=0)
+# Layout 8 Kolom Tombol Horisontal
+col_nav = st.columns(8)
+
+for i, (short_label, full_label) in enumerate(menu_items):
+    with col_nav[i]:
+        is_active = (st.session_state.active_menu == full_label)
+        btn_type = "primary" if is_active else "secondary"
+        if st.button(short_label, key=f"nav_btn_{i}", use_container_width=True, type=btn_type):
+            st.session_state.active_menu = full_label
+            st.rerun()
+
+menu = st.session_state.active_menu
 st.write("")
 
 # ---------------------------------------------------------
