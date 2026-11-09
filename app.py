@@ -77,15 +77,13 @@ if menu == "1.📌 Project Overview":
   st.divider()
 
   st.info(
-      "💡 **Penjelasan Singkat Modul:** Halaman ini berfungsi sebagai lembar"
-      " perkenalan proyek. Modul ini menyajikan informasi umum mengenai latar"
-      " belakang sistem peringatan dini kualitas udara hibrida (GA-PSO-RNN-FIS)"
-      " serta daftar identitas tim pengembang Kelompok 9."
+      "💡 **Petunjuk Interaktif:** Klik tombol expander di bawah untuk membuka"
+      " ringkasan proyek dan identitas tim pengembang."
   )
 
-  col1, col2 = st.columns([2, 1])
-  with col1:
-    st.subheader("📋 Ringkasan Proyek")
+  with st.expander(
+      "📖 Klik untuk Buka Ringkasan Proyek & Arsitektur", expanded=False
+  ):
     st.write("""
         Sistem kecerdasan buatan hibrida ini dirancang untuk memprediksi tingkat polusi udara (fokus pada konsentrasi **CO**) 
         menggunakan **UCI Air Quality Dataset (ID 360)**. Sistem menggabungkan 4 komponen utama:
@@ -95,8 +93,7 @@ if menu == "1.📌 Project Overview":
         - **Fuzzy Inference System (FIS):** Sistem pendukung keputusan pemetaan indeks risiko kesehatan.
         """)
 
-  with col2:
-    st.subheader("👥 Anggota Kelompok 9")
+  with st.expander("👥 Klik untuk Buka Daftar Anggota Kelompok 9", expanded=False):
     st.success("""
         - **Ariyo Arianto** (04231013)
         - **Jhosua George Kamagi** (04231043)
@@ -116,10 +113,8 @@ elif menu == "2.📊 Dataset Explorer":
   st.divider()
 
   st.info(
-      "💡 **Penjelasan Singkat Modul:** Sebelum dilatih oleh AI, data mentah"
-      " dari sensor lapangan harus diperiksa. Modul ini memperlihatkan bukti"
-      " pembersihan data kosong (angka `-200`) yang ditambal menggunakan teknik"
-      " *time-series interpolation* agar urutan waktu tidak terputus."
+      "💡 **Petunjuk Interaktif:** Klik masing-masing modul di bawah untuk"
+      " menampilkan grafik distribusi dan tabel data."
   )
 
   m1, m2, m3, m4 = st.columns(4)
@@ -128,89 +123,103 @@ elif menu == "2.📊 Dataset Explorer":
   m3.metric("Missing Value Flag", "-200")
   m4.metric("Periode Data", "Mar 2004 - Feb 2005")
 
-  st.subheader("1. Pembersihan Missing Value (-200)")
-  st.write("""
-    Pada dataset asli UCI ID 360, nilai yang tidak terekam oleh sensor ditandai dengan angka **`-200`**. 
-    Tahapan pembersihan data yang dilakukan:
-    1. Mengganti seluruh nilai `-200` menjadi `NaN`.
-    2. Menghapus kolom `NMHC(GT)` karena persentase missing value melebihi 90%.
-    3. Melakukan **Time-Series Linear Interpolation** dilanjutkan **Forward/Backward Fill** untuk mempertahankan sifat kronologis data.
-    """)
+  with st.expander(
+      "🔍 1. Detail Pembersihan Missing Value (-200)", expanded=False
+  ):
+    st.write("""
+        Pada dataset asli UCI ID 360, nilai yang tidak terekam oleh sensor ditandai dengan angka **`-200`**. 
+        Tahapan pembersihan data yang dilakukan:
+        1. Mengganti seluruh nilai `-200` menjadi `NaN`.
+        2. Menghapus kolom `NMHC(GT)` karena persentase missing value melebihi 90%.
+        3. Melakukan **Time-Series Linear Interpolation** dilanjutkan **Forward/Backward Fill** untuk mempertahankan sifat kronologis data.
+        """)
 
-  st.subheader("2. Visualisasi Distribusi Sensor Utama")
-  col_chart1, col_chart2 = st.columns(2)
+  with st.expander("📊 2. Visualisasi Grafik Distribusi & Tren", expanded=False):
+    col_chart1, col_chart2 = st.columns(2)
+    with col_chart1:
+      fig1, ax1 = plt.subplots(figsize=(6, 3.5))
+      np.random.seed(42)
+      co_sample = np.random.lognormal(mean=0.6, sigma=0.5, size=1000)
+      co_sample = np.clip(co_sample, 0.1, 11.9)
+      sns.histplot(co_sample, kde=True, color="#1D4ED8", ax=ax1)
+      ax1.set_title("Distribusi Konsentrasi CO(GT) (mg/m³)")
+      ax1.set_xlabel("Konsentrasi CO")
+      ax1.set_ylabel("Frekuensi")
+      st.pyplot(fig1)
 
-  with col_chart1:
-    fig1, ax1 = plt.subplots(figsize=(6, 3.5))
-    np.random.seed(42)
-    co_sample = np.random.lognormal(mean=0.6, sigma=0.5, size=1000)
-    co_sample = np.clip(co_sample, 0.1, 11.9)
-    sns.histplot(co_sample, kde=True, color="#1D4ED8", ax=ax1)
-    ax1.set_title("Distribusi Konsentrasi CO(GT) (mg/m³)")
-    ax1.set_xlabel("Konsentrasi CO")
-    ax1.set_ylabel("Frekuensi")
-    st.pyplot(fig1)
+    with col_chart2:
+      fig2, ax2 = plt.subplots(figsize=(6, 3.5))
+      time_series = np.linspace(0, 100, 200)
+      temp = 18 + 10 * np.sin(time_series / 5)
+      rh = 50 + 25 * np.cos(time_series / 5)
+      ax2.plot(time_series, temp, color="#EF4444", label="Suhu (°C)")
+      ax2.plot(
+          time_series,
+          rh,
+          color="#06B6D4",
+          label="Kelembapan Relative (%)",
+          linestyle="--",
+      )
+      ax2.set_title("Tren Profil Lingkungan (Suhu vs RH)")
+      ax2.set_xlabel("Sampel Waktu (Jam)")
+      ax2.legend()
+      st.pyplot(fig2)
 
-  with col_chart2:
-    fig2, ax2 = plt.subplots(figsize=(6, 3.5))
-    time_series = np.linspace(0, 100, 200)
-    temp = 18 + 10 * np.sin(time_series / 5)
-    rh = 50 + 25 * np.cos(time_series / 5)
-    ax2.plot(time_series, temp, color="#EF4444", label="Suhu (°C)")
-    ax2.plot(
-        time_series,
-        rh,
-        color="#06B6D4",
-        label="Kelembapan Relative (%)",
-        linestyle="--",
-    )
-    ax2.set_title("Tren Profil Lingkungan (Suhu vs RH)")
-    ax2.set_xlabel("Sampel Waktu (Jam)")
-    ax2.legend()
-    st.pyplot(fig2)
-
-  st.subheader("3. Statistik Deskriptif Atribut Utama")
-  stats_data = {
-      "Atribut Sensor": [
-          "CO(GT)",
-          "PT08.S1(CO)",
-          "C6H6(GT)",
-          "PT08.S2(NMHC)",
-          "NOx(GT)",
-          "PT08.S3(NOx)",
-          "NO2(GT)",
-          "T",
-          "RH",
-          "AH",
-      ],
-      "Deskripsi": [
-          "Karbon Monoksida (True)",
-          "Respon Sensor S1",
-          "Benzena (True)",
-          "Respon Sensor S2",
-          "Nitrogen Oksida",
-          "Respon Sensor S3",
-          "Nitrogen Dioksida",
-          "Suhu (°C)",
-          "Kelembapan Relatif (%)",
-          "Kelembapan Absolut",
-      ],
-      "Rata-rata": [
-          2.15,
-          1099.8,
-          10.08,
-          939.1,
-          246.9,
-          835.5,
-          113.1,
-          18.3,
-          49.2,
-          1.02,
-      ],
-      "Min": [0.10, 647.0, 0.10, 383.0, 2.0, 322.0, 2.0, -1.9, 9.2, 0.18],
-      "Max": [11.90, 2040.0, 63.70, 2214.0, 1479.0, 2683.0, 340.0, 44.6, 88.7, 2.23],
-  }
-  st.dataframe(pd.DataFrame(stats_data), use_container_width=True)
+  with st.expander(
+      "📋 3. Tabel Statistik Deskriptif Atribut Sensor", expanded=False
+  ):
+    stats_data = {
+        "Atribut Sensor": [
+            "CO(GT)",
+            "PT08.S1(CO)",
+            "C6H6(GT)",
+            "PT08.S2(NMHC)",
+            "NOx(GT)",
+            "PT08.S3(NOx)",
+            "NO2(GT)",
+            "T",
+            "RH",
+            "AH",
+        ],
+        "Deskripsi": [
+            "Karbon Monoksida (True)",
+            "Respon Sensor S1",
+            "Benzena (True)",
+            "Respon Sensor S2",
+            "Nitrogen Oksida",
+            "Respon Sensor S3",
+            "Nitrogen Dioksida",
+            "Suhu (°C)",
+            "Kelembapan Relatif (%)",
+            "Kelembapan Absolut",
+        ],
+        "Rata-rata": [
+            2.15,
+            1099.8,
+            10.08,
+            939.1,
+            246.9,
+            835.5,
+            113.1,
+            18.3,
+            49.2,
+            1.02,
+        ],
+        "Min": [0.10, 647.0, 0.10, 383.0, 2.0, 322.0, 2.0, -1.9, 9.2, 0.18],
+        "Max": [
+            11.90,
+            2040.0,
+            63.70,
+            2214.0,
+            1479.0,
+            2683.0,
+            340.0,
+            44.6,
+            88.7,
+            2.23,
+        ],
+    }
+    st.dataframe(pd.DataFrame(stats_data), use_container_width=True)
 
 # ---------------------------------------------------------
 # MENU 3: GA OPTIMIZATION
@@ -224,11 +233,8 @@ elif menu == "3.🧬 GA Optimization":
   st.divider()
 
   st.info(
-      "💡 **Penjelasan Singkat Modul:** Tidak semua sensor di lapangan berguna."
-      " Modul ini menunjukkan bagaimana Algoritma Genetik (GA) bertindak"
-      " sebagai penyaring alami untuk memilih sensor paling relevan (seperti"
-      " CO, Suhu, Kelembapan) dan membuang sensor yang redundan agar model AI"
-      " tidak bingung."
+      "💡 **Petunjuk Interaktif:** Tekan tombol accordion di bawah untuk"
+      " melihat hasil seleksi fitur dan grafik konvergensi evolusi GA."
   )
 
   selected_feats = [
@@ -251,44 +257,49 @@ elif menu == "3.🧬 GA Optimization":
     mean_fit = ga_res.get("mean_fitness", ga_res.get("avg_fitness", mean_fit))
     std_fit = ga_res.get("std_fitness", ga_res.get("std_dev", std_fit))
 
-  c1, c2 = st.columns(2)
-  with c1:
-    st.subheader("✅ Fitur Terpilih (Selected)")
-    for f in selected_feats:
-      st.success(f"• {f}")
-  with c2:
-    st.subheader("❌ Fitur Dieliminasi (Eliminated)")
-    for f in eliminated_feats:
-      st.error(f"• {f}")
+  with st.expander(
+      "✅ Klik untuk Buka Daftar Fitur Terpilih & Dieliminasi", expanded=False
+  ):
+    c1, c2 = st.columns(2)
+    with c1:
+      st.subheader("✅ Fitur Terpilih (Selected)")
+      for f in selected_feats:
+        st.success(f"• {f}")
+    with c2:
+      st.subheader("❌ Fitur Dieliminasi (Eliminated)")
+      for f in eliminated_feats:
+        st.error(f"• {f}")
 
-  st.subheader("Kurva Konvergensi Evolusi GA")
-  fig_ga, ax_ga = plt.subplots(figsize=(9, 3.5))
-  generations = np.arange(1, 31)
-  fitness_curve = 0.125 - 0.0507 * (
-      1 - np.exp(-generations / 5.5)
-  ) + np.random.normal(0, 0.001, 30)
-  fitness_curve = np.maximum(fitness_curve, best_fit)
-  fitness_curve[-1] = best_fit
+  with st.expander(
+      "📈 Klik untuk Buka Grafik Konvergensi Fitness GA", expanded=False
+  ):
+    fig_ga, ax_ga = plt.subplots(figsize=(9, 3.5))
+    generations = np.arange(1, 31)
+    fitness_curve = 0.125 - 0.0507 * (
+        1 - np.exp(-generations / 5.5)
+    ) + np.random.normal(0, 0.001, 30)
+    fitness_curve = np.maximum(fitness_curve, best_fit)
+    fitness_curve[-1] = best_fit
 
-  ax_ga.plot(
-      generations,
-      fitness_curve,
-      marker="o",
-      color="#2563EB",
-      linewidth=2,
-      label="Best Fitness (MSE)",
-  )
-  ax_ga.set_title("Grafik Konvergensi Fitness per Generasi GA")
-  ax_ga.set_xlabel("Generasi")
-  ax_ga.set_ylabel("Fitness Score (MSE Loss)")
-  ax_ga.legend()
-  st.pyplot(fig_ga)
+    ax_ga.plot(
+        generations,
+        fitness_curve,
+        marker="o",
+        color="#2563EB",
+        linewidth=2,
+        label="Best Fitness (MSE)",
+    )
+    ax_ga.set_title("Grafik Konvergensi Fitness per Generasi GA")
+    ax_ga.set_xlabel("Generasi")
+    ax_ga.set_ylabel("Fitness Score (MSE Loss)")
+    ax_ga.legend()
+    st.pyplot(fig_ga)
 
-  st.subheader("Statistik Optimasi GA")
-  g1, g2, g3 = st.columns(3)
-  g1.metric("Akurasi Fitness Terbaik", f"{best_fit:.4f}")
-  g2.metric("Rata-rata Fitness", f"{mean_fit:.4f}")
-  g3.metric("Standar Deviasi", f"{std_fit:.4f}")
+  with st.expander("📊 Klik untuk Buka Statistik Fitness GA", expanded=False):
+    g1, g2, g3 = st.columns(3)
+    g1.metric("Akurasi Fitness Terbaik", f"{best_fit:.4f}")
+    g2.metric("Rata-rata Fitness", f"{mean_fit:.4f}")
+    g3.metric("Standar Deviasi", f"{std_fit:.4f}")
 
 # ---------------------------------------------------------
 # MENU 4: PSO OPTIMIZATION
@@ -302,11 +313,8 @@ elif menu == "4.🐝 PSO Optimization":
   st.divider()
 
   st.info(
-      "💡 **Penjelasan Singkat Modul:** Agar mesin peramal Neural Network"
-      " bekerja akurat, dibutuhkan setelan parameter yang pas (seperti"
-      " *sequence length* dan *learning rate*). Modul ini menampilkan hasil"
-      " kerja algoritma PSO yang mencari setelan terbaik tersebut secara"
-      " otomatis."
+      "💡 **Petunjuk Interaktif:** Buka tombol di bawah untuk menyibak racikan"
+      " hiperparameter optimal dan kurva konvergensi PSO."
   )
 
   seq_len = 8
@@ -333,35 +341,42 @@ elif menu == "4.🐝 PSO Optimization":
     elif isinstance(metrics_dict, dict):
       best_cost = metrics_dict.get("rmse", best_cost)
 
-  p1, p2, p3, p4 = st.columns(4)
-  p1.metric("Sequence Length (Window)", f"{seq_len} Jam")
-  p2.metric("Hidden Units", f"{hidden_u}")
-  p3.metric("Learning Rate", f"{lr_val:.6f}")
-  p4.metric("Dropout Rate", f"{drop_val:.4f}")
+  with st.expander(
+      "⚙️ Klik untuk Buka Parameter Hasil Optimasi PSO", expanded=False
+  ):
+    p1, p2, p3, p4 = st.columns(4)
+    p1.metric("Sequence Length (Window)", f"{seq_len} Jam")
+    p2.metric("Hidden Units", f"{hidden_u}")
+    p3.metric("Learning Rate", f"{lr_val:.6f}")
+    p4.metric("Dropout Rate", f"{drop_val:.4f}")
 
-  st.subheader("Kurva Konvergensi Global Best Swarm (PSO)")
-  fig_pso, ax_pso = plt.subplots(figsize=(9, 3.5))
-  iters = np.arange(1, 21)
-  pso_curve = 0.145 * np.exp(-iters / 4.0) + best_cost
-  ax_pso.plot(
-      iters,
-      pso_curve,
-      marker="s",
-      color="#D97706",
-      linewidth=2,
-      label="Global Best RMSE",
-  )
-  ax_pso.set_title("Grafik Trajektori Penurunan Loss PSO Swarm")
-  ax_pso.set_xlabel("Iterasi Swarm")
-  ax_pso.set_ylabel("Global Best RMSE")
-  ax_pso.legend()
-  st.pyplot(fig_pso)
+  with st.expander(
+      "📉 Klik untuk Buka Grafik Trajektori Swarm PSO", expanded=False
+  ):
+    fig_pso, ax_pso = plt.subplots(figsize=(9, 3.5))
+    iters = np.arange(1, 21)
+    pso_curve = 0.145 * np.exp(-iters / 4.0) + best_cost
+    ax_pso.plot(
+        iters,
+        pso_curve,
+        marker="s",
+        color="#D97706",
+        linewidth=2,
+        label="Global Best RMSE",
+    )
+    ax_pso.set_title("Grafik Trajektori Penurunan Loss PSO Swarm")
+    ax_pso.set_xlabel("Iterasi Swarm")
+    ax_pso.set_ylabel("Global Best RMSE")
+    ax_pso.legend()
+    st.pyplot(fig_pso)
 
-  st.subheader("Statistik Konvergensi PSO (10 Independent Runs)")
-  ps1, ps2, ps3 = st.columns(3)
-  ps1.metric("Best Loss (RMSE)", f"{best_cost:.4f}")
-  ps2.metric("Mean Loss", f"{mean_cost:.4f}")
-  ps3.metric("Std Dev Loss", f"{std_cost:.4f}")
+  with st.expander(
+      "🔢 Klik untuk Buka Statistik 10 Independent Runs", expanded=False
+  ):
+    ps1, ps2, ps3 = st.columns(3)
+    ps1.metric("Best Loss (RMSE)", f"{best_cost:.4f}")
+    ps2.metric("Mean Loss", f"{mean_cost:.4f}")
+    ps3.metric("Std Dev Loss", f"{std_cost:.4f}")
 
 # ---------------------------------------------------------
 # MENU 5: NEURAL NETWORK
@@ -375,10 +390,8 @@ elif menu == "5.🧠 Neural Network":
   st.divider()
 
   st.info(
-      "💡 **Penjelasan Singkat Modul:** Ini adalah modul 'otak peramal'."
-      " Di sini disajikan grafik perbandingan antara data konsentrasi CO asli"
-      " di lapangan dengan hasil ramalan model RNN selama 96 jam ke depan"
-      " beserta metrik tingkat kesalahannya (MAE/RMSE)."
+      "💡 **Petunjuk Interaktif:** Tekan expander untuk melihat metrik"
+      " evaluasi, grafik epoch loss, dan kurva hasil prediksi."
   )
 
   mae_val = 0.0645
@@ -392,57 +405,68 @@ elif menu == "5.🧠 Neural Network":
       rmse_val = metrics.get("rmse", rmse_val)
       r2_val = metrics.get("r2", r2_val)
 
-  st.subheader("Metrik Evaluasi Model Terbaik (Test Set)")
-  m1, m2, m3 = st.columns(3)
-  m1.metric("Mean Absolute Error (MAE)", f"{mae_val:.4f}")
-  m2.metric("Root Mean Squared Error (RMSE)", f"{rmse_val:.4f}")
-  m3.metric("R² Score (Koefisien Determinasi)", f"{r2_val:.4f}")
+  with st.expander(
+      "🎯 Klik untuk Buka Metrik Evaluasi Test Set (MAE, RMSE, R²)",
+      expanded=False,
+  ):
+    m1, m2, m3 = st.columns(3)
+    m1.metric("Mean Absolute Error (MAE)", f"{mae_val:.4f}")
+    m2.metric("Root Mean Squared Error (RMSE)", f"{rmse_val:.4f}")
+    m3.metric("R² Score (Koefisien Determinasi)", f"{r2_val:.4f}")
 
-  st.subheader("Visualisasi Kinerja Model RNN (Test Set)")
-  col_nn1, col_nn2 = st.columns(2)
+  with st.expander(
+      "📈 Klik untuk Buka Grafik Loss & Hasil Prediksi vs Data Aktual",
+      expanded=False,
+  ):
+    col_nn1, col_nn2 = st.columns(2)
+    with col_nn1:
+      fig_loss, ax_l = plt.subplots(figsize=(6, 3.5))
+      epochs = np.arange(1, 51)
+      t_loss = 0.18 * np.exp(-epochs / 8.0) + 0.006
+      v_loss = 0.19 * np.exp(-epochs / 8.0) + 0.009
+      ax_l.plot(epochs, t_loss, color="#2563EB", label="Training Loss")
+      ax_l.plot(
+          epochs,
+          v_loss,
+          color="#DC2626",
+          label="Validation Loss",
+          linestyle="--",
+      )
+      ax_l.set_title("Kurva Epoch Training vs Validation Loss (MSE)")
+      ax_l.set_xlabel("Epoch")
+      ax_l.set_ylabel("Loss")
+      ax_l.legend()
+      st.pyplot(fig_loss)
 
-  with col_nn1:
-    fig_loss, ax_l = plt.subplots(figsize=(6, 3.5))
-    epochs = np.arange(1, 51)
-    t_loss = 0.18 * np.exp(-epochs / 8.0) + 0.006
-    v_loss = 0.19 * np.exp(-epochs / 8.0) + 0.009
-    ax_l.plot(epochs, t_loss, color="#2563EB", label="Training Loss")
-    ax_l.plot(
-        epochs,
-        v_loss,
-        color="#DC2626",
-        label="Validation Loss",
-        linestyle="--",
-    )
-    ax_l.set_title("Kurva Epoch Training vs Validation Loss (MSE)")
-    ax_l.set_xlabel("Epoch")
-    ax_l.set_ylabel("Loss")
-    ax_l.legend()
-    st.pyplot(fig_loss)
+    with col_nn2:
+      fig_pred, ax_p = plt.subplots(figsize=(6, 3.5))
+      hrs = np.arange(1, 97)
+      act = 2.2 + 1.2 * np.sin(hrs / 8) + np.random.normal(0, 0.15, 96)
+      prd = 2.2 + 1.15 * np.sin(hrs / 8) + np.random.normal(0, 0.08, 96)
+      ax_p.plot(hrs, act, color="#1F2937", label="Aktual (CO mg/m³)", alpha=0.8)
+      ax_p.plot(
+          hrs, prd, color="#16A34A", label="Prediksi RNN", linestyle="--"
+      )
+      ax_p.set_title(
+          "Perbandingan Konsentrasi CO: Aktual vs Prediksi (96 Jam)"
+      )
+      ax_p.set_xlabel("Waktu (Jam)")
+      ax_p.set_ylabel("CO (mg/m³)")
+      ax_p.legend()
+      st.pyplot(fig_pred)
 
-  with col_nn2:
-    fig_pred, ax_p = plt.subplots(figsize=(6, 3.5))
-    hrs = np.arange(1, 97)
-    act = 2.2 + 1.2 * np.sin(hrs / 8) + np.random.normal(0, 0.15, 96)
-    prd = 2.2 + 1.15 * np.sin(hrs / 8) + np.random.normal(0, 0.08, 96)
-    ax_p.plot(hrs, act, color="#1F2937", label="Aktual (CO mg/m³)", alpha=0.8)
-    ax_p.plot(hrs, prd, color="#16A34A", label="Prediksi RNN", linestyle="--")
-    ax_p.set_title("Perbandingan Konsentrasi CO: Aktual vs Prediksi (96 Jam)")
-    ax_p.set_xlabel("Waktu (Jam)")
-    ax_p.set_ylabel("CO (mg/m³)")
-    ax_p.legend()
-    st.pyplot(fig_pred)
-
-  st.subheader("Spesifikasi Arsitektur")
-  st.json({
-      "Input Features": 6,
-      "Sequence Length": 8,
-      "RNN Layers": 2,
-      "Hidden Units": 84,
-      "Dropout": 0.2893,
-      "Optimizer": "Adam",
-      "Loss Function": "MSE Loss",
-  })
+  with st.expander(
+      "🏗️ Klik untuk Buka JSON Spesifikasi Arsitektur RNN", expanded=False
+  ):
+    st.json({
+        "Input Features": 6,
+        "Sequence Length": 8,
+        "RNN Layers": 2,
+        "Hidden Units": 84,
+        "Dropout": 0.2893,
+        "Optimizer": "Adam",
+        "Loss Function": "MSE Loss",
+    })
 
 # ---------------------------------------------------------
 # MENU 6: FUZZY INFERENCE
@@ -456,101 +480,116 @@ elif menu == "6.🎛️ Fuzzy Inference":
   st.divider()
 
   st.info(
-      "💡 **Penjelasan Singkat Modul:** Angka teknis hasil ramalan (misal: 4.2"
-      " mg/m³) kurang dipahami masyarakat. Modul ini menampilkan 'kamus"
-      " aturan' Logika Fuzzy yang menerjemahkan angka tersebut menjadi 5"
-      " tingkatan risiko kesehatan masyarakat."
+      "💡 **Petunjuk Interaktif:** Tekan tombol lipat di bawah untuk melihat"
+      " kurva fungsi keanggotaan fuzzy dan tabel kategori kesehatan."
   )
 
-  st.subheader("1. Kurva Fungsi Keanggotaan Input: Konsentrasi CO (mg/m³)")
-  fig_fz, ax_fz = plt.subplots(figsize=(9, 3.5))
-  x_co = np.linspace(0, 15, 300)
+  with st.expander(
+      "📈 1. Klik untuk Buka Kurva Fungsi Keanggotaan Fuzzy (Membership"
+      " Functions)",
+      expanded=False,
+  ):
+    fig_fz, ax_fz = plt.subplots(figsize=(9, 3.5))
+    x_co = np.linspace(0, 15, 300)
+    vl = np.array(
+        [max(0.0, min(1.0, (3.0 - c) / 3.0)) if c <= 3.0 else 0.0 for c in x_co]
+    )
+    l = np.array([
+        max(0.0, min((c - 1.5) / 2.0, (5.5 - c) / 2.0))
+        if 1.5 <= c <= 5.5
+        else 0.0
+        for c in x_co
+    ])
+    m = np.array([
+        max(0.0, min((c - 4.0) / 2.5, (9.0 - c) / 2.5))
+        if 4.0 <= c <= 9.0
+        else 0.0
+        for c in x_co
+    ])
+    h = np.array([
+        max(0.0, min((c - 7.5) / 2.5, (12.5 - c) / 2.5))
+        if 7.5 <= c <= 12.5
+        else 0.0
+        for c in x_co
+    ])
+    vh = np.array(
+        [
+            max(0.0, min((c - 11.0) / 2.0, 1.0)) if c >= 11.0 else 0.0
+            for c in x_co
+        ]
+    )
 
-  vl = np.array(
-      [max(0.0, min(1.0, (3.0 - c) / 3.0)) if c <= 3.0 else 0.0 for c in x_co]
-  )
-  l = np.array([
-      max(0.0, min((c - 1.5) / 2.0, (5.5 - c) / 2.0))
-      if 1.5 <= c <= 5.5
-      else 0.0
-      for c in x_co
-  ])
-  m = np.array([
-      max(0.0, min((c - 4.0) / 2.5, (9.0 - c) / 2.5))
-      if 4.0 <= c <= 9.0
-      else 0.0
-      for c in x_co
-  ])
-  h = np.array([
-      max(0.0, min((c - 7.5) / 2.5, (12.5 - c) / 2.5))
-      if 7.5 <= c <= 12.5
-      else 0.0
-      for c in x_co
-  ])
-  vh = np.array(
-      [max(0.0, min((c - 11.0) / 2.0, 1.0)) if c >= 11.0 else 0.0 for c in x_co]
-  )
+    ax_fz.plot(x_co, vl, label="Very Low", color="#16A34A", linewidth=2)
+    ax_fz.plot(x_co, l, label="Low", color="#EAB308", linewidth=2)
+    ax_fz.plot(x_co, m, label="Medium", color="#F97316", linewidth=2)
+    ax_fz.plot(x_co, h, label="High", color="#DC2626", linewidth=2)
+    ax_fz.plot(x_co, vh, label="Very High", color="#9333EA", linewidth=2)
 
-  ax_fz.plot(x_co, vl, label="Very Low", color="#16A34A", linewidth=2)
-  ax_fz.plot(x_co, l, label="Low", color="#EAB308", linewidth=2)
-  ax_fz.plot(x_co, m, label="Medium", color="#F97316", linewidth=2)
-  ax_fz.plot(x_co, h, label="High", color="#DC2626", linewidth=2)
-  ax_fz.plot(x_co, vh, label="Very High", color="#9333EA", linewidth=2)
+    ax_fz.set_title("Fungsi Keanggotaan Fuzzy (Fuzzy Membership Functions)")
+    ax_fz.set_xlabel("Konsentrasi CO (mg/m³)")
+    ax_fz.set_ylabel("Derajat Keanggotaan (μ)")
+    ax_fz.legend()
+    st.pyplot(fig_fz)
 
-  ax_fz.set_title("Fungsi Keanggotaan Fuzzy (Fuzzy Membership Functions)")
-  ax_fz.set_xlabel("Konsentrasi CO (mg/m³)")
-  ax_fz.set_ylabel("Derajat Keanggotaan (μ)")
-  ax_fz.legend()
-  st.pyplot(fig_fz)
+  with st.expander(
+      "📐 2. Klik untuk Buka Matriks Rentang Fungsi Keanggotaan", expanded=False
+  ):
+    mf_data = {
+        "Kategori Fuzzy": [
+            "Very Low (Sangat Rendah)",
+            "Low (Rendah)",
+            "Medium (Sedang)",
+            "High (Tinggi)",
+            "Very High (Sangat Tinggi)",
+        ],
+        "Rentang Nilai CO": [
+            "0.0 - 3.0 mg/m³",
+            "1.5 - 5.5 mg/m³",
+            "4.0 - 9.0 mg/m³",
+            "7.5 - 12.5 mg/m³",
+            ">= 11.0 mg/m³",
+        ],
+        "Bentuk Kurva": [
+            "Triangular",
+            "Triangular",
+            "Triangular",
+            "Triangular",
+            "Trapezoidal",
+        ],
+    }
+    st.table(pd.DataFrame(mf_data))
 
-  st.subheader("2. Matriks Rentang Fungsi Keanggotaan")
-  mf_data = {
-      "Kategori Fuzzy": [
-          "Very Low (Sangat Rendah)",
-          "Low (Rendah)",
-          "Medium (Sedang)",
-          "High (Tinggi)",
-          "Very High (Sangat Tinggi)",
-      ],
-      "Rentang Nilai CO": [
-          "0.0 - 3.0 mg/m³",
-          "1.5 - 5.5 mg/m³",
-          "4.0 - 9.0 mg/m³",
-          "7.5 - 12.5 mg/m³",
-          ">= 11.0 mg/m³",
-      ],
-      "Bentuk Kurva": [
-          "Triangular",
-          "Triangular",
-          "Triangular",
-          "Triangular",
-          "Trapezoidal",
-      ],
-  }
-  st.table(pd.DataFrame(mf_data))
-
-  st.subheader("3. Klasifikasi Risiko Kesehatan (Output Defuzzifikasi)")
-  risk_table = {
-      "Skor Risk Index": ["0 - 21", "22 - 47", "48 - 67", "68 - 85", "86 - 100"],
-      "Status Kualitas Udara": [
-          "🟢 Good",
-          "🟡 Moderate",
-          "🟠 Unhealthy",
-          "🔴 Very Unhealthy",
-          "🟣 Hazardous",
-      ],
-      "Rekomendasi Kesehatan": [
-          "Aman untuk aktivitas luar ruangan.",
-          (
-              "Kelompok sensitif sebaiknya mengurangi aktivitas fisik berat di"
-              " luar."
-          ),
-          "Gunakan masker saat berada di luar ruangan.",
-          "Hindari aktivitas di luar ruangan.",
-          "Tingkat BAHAYA! Wajib tetap berada di dalam ruangan.",
-      ],
-  }
-  st.dataframe(pd.DataFrame(risk_table), use_container_width=True)
+  with st.expander(
+      "🏥 3. Klik untuk Buka Tabel Klasifikasi Risiko Kesehatan & Rekomendasi",
+      expanded=False,
+  ):
+    risk_table = {
+        "Skor Risk Index": [
+            "0 - 21",
+            "22 - 47",
+            "48 - 67",
+            "68 - 85",
+            "86 - 100",
+        ],
+        "Status Kualitas Udara": [
+            "🟢 Good",
+            "🟡 Moderate",
+            "🟠 Unhealthy",
+            "🔴 Very Unhealthy",
+            "🟣 Hazardous",
+        ],
+        "Rekomendasi Kesehatan": [
+            "Aman untuk aktivitas luar ruangan.",
+            (
+                "Kelompok sensitif sebaiknya mengurangi aktivitas fisik berat"
+                " di luar."
+            ),
+            "Gunakan masker saat berada di luar ruangan.",
+            "Hindari aktivitas di luar ruangan.",
+            "Tingkat BAHAYA! Wajib tetap berada di dalam ruangan.",
+        ],
+    }
+    st.dataframe(pd.DataFrame(risk_table), use_container_width=True)
 
 # ---------------------------------------------------------
 # MENU 7: PREDICTION & SIMULATION
@@ -563,19 +602,14 @@ elif menu == "7.🔮 Prediction & Simulation":
   )
   st.divider()
 
-  st.info(
-      "💡 **Penjelasan Singkat Modul:** Halaman ini adalah ruang uji coba"
-      " interaktif. Penguji dapat menggeser slider konsentrasi gas CO secara"
-      " bebas, lalu menekan tombol inferensi untuk melihat kalkulasi risiko"
-      " kesehatan dan saran aktivitas luar ruangan secara langsung."
-  )
-
   col_input, col_output = st.columns([1, 1])
 
   with col_input:
     st.subheader("Input Parameter Prediksi")
     val_co = st.slider("Prediksi Konsentrasi CO (mg/m³)", 0.0, 15.0, 4.2, 0.1)
     st.write(f"Nilai Terpilih: **{val_co:.1f} mg/m³**")
+
+    # Button Pemicu Utama
     btn = st.button(
         "🚀 Jalankan Inferensi Hybrid", use_container_width=True, type="primary"
     )
@@ -583,6 +617,7 @@ elif menu == "7.🔮 Prediction & Simulation":
   with col_output:
     st.subheader("Hasil Inferensi Logika Fuzzy")
 
+    # Konten Hasil Hanya Muncul Saat Tombol Ditekan Atau Slider Digeser
     if btn:
       with st.spinner("Memproses Pipeline GA-PSO-RNN & Inferensi FIS..."):
         time.sleep(0.4)
@@ -602,6 +637,16 @@ elif menu == "7.🔮 Prediction & Simulation":
     else:
       st.error(desc)
 
+  with st.expander(
+      "ℹ️ Klik untuk Buka Penjelasan Detail Defuzzifikasi FIS", expanded=False
+  ):
+    st.write(f"""
+        - **Metode Defuzzifikasi:** Center of Gravity (CoG) Mamdani
+        - **Nilai Input CO:** `{val_co:.1f} mg/m³`
+        - **Skor Output Crisp:** `{score:.2f}`
+        - **Kategori Terpilih:** **{label}**
+        """)
+
 # ---------------------------------------------------------
 # MENU 8: MODEL COMPARISON
 # ---------------------------------------------------------
@@ -614,76 +659,81 @@ elif menu == "8.📈 Model Comparison":
   st.divider()
 
   st.info(
-      "💡 **Penjelasan Singkat Modul:** Modul penutup ini membuktikan secara"
-      " ilmiah bahwa gabungan seluruh metode (Model E) terbukti memiliki"
-      " tingkat kesalahan paling rendah (RMSE) dan akurasi paling tinggi"
-      " ($R^2$) dibandingkan RNN biasa (Model A)."
+      "💡 **Petunjuk Interaktif:** Klik tombol di bawah untuk menampilkan grafik"
+      " batang komparasi dan tabel evaluasi 5 model."
   )
 
-  st.subheader("Visualisasi Grafik Perbandingan Metrik Evaluasi")
-  fig_cmp, (ax_rmse, ax_r2) = plt.subplots(1, 2, figsize=(10, 3.8))
+  with st.expander(
+      "📊 Klik untuk Buka Grafik Perbandingan RMSE & R² Score", expanded=False
+  ):
+    fig_cmp, (ax_rmse, ax_r2) = plt.subplots(1, 2, figsize=(10, 3.8))
+    models_label = [
+        "Model A\n(RNN)",
+        "Model B\n(GA+RNN)",
+        "Model C\n(PSO+RNN)",
+        "Model D\n(GA+PSO+RNN)",
+        "Model E\n(Full Hybrid)",
+    ]
+    rmse_list = [0.1589, 0.1210, 0.0963, 0.0813, 0.0813]
+    r2_list = [0.1852, 0.3120, 0.4015, 0.4713, 0.4713]
 
-  models_label = [
-      "Model A\n(RNN)",
-      "Model B\n(GA+RNN)",
-      "Model C\n(PSO+RNN)",
-      "Model D\n(GA+PSO+RNN)",
-      "Model E\n(Full Hybrid)",
-  ]
-  rmse_list = [0.1589, 0.1210, 0.0963, 0.0813, 0.0813]
-  r2_list = [0.1852, 0.3120, 0.4015, 0.4713, 0.4713]
+    ax_rmse.bar(
+        models_label,
+        rmse_list,
+        color=["#9CA3AF", "#60A5FA", "#3B82F6", "#1D4ED8", "#047857"],
+    )
+    ax_rmse.set_title("Perbandingan RMSE (Semakin Kecil Baik)")
+    ax_rmse.set_ylabel("RMSE")
 
-  ax_rmse.bar(
-      models_label,
-      rmse_list,
-      color=["#9CA3AF", "#60A5FA", "#3B82F6", "#1D4ED8", "#047857"],
-  )
-  ax_rmse.set_title("Perbandingan RMSE (Semakin Kecil Baik)")
-  ax_rmse.set_ylabel("RMSE")
+    ax_r2.bar(
+        models_label,
+        r2_list,
+        color=["#9CA3AF", "#FBBF24", "#F59E0B", "#D97706", "#059669"],
+    )
+    ax_r2.set_title("Perbandingan R² Score (Semakin Tinggi Baik)")
+    ax_r2.set_ylabel("R² Score")
 
-  ax_r2.bar(
-      models_label,
-      r2_list,
-      color=["#9CA3AF", "#FBBF24", "#F59E0B", "#D97706", "#059669"],
-  )
-  ax_r2.set_title("Perbandingan R² Score (Semakin Tinggi Baik)")
-  ax_r2.set_ylabel("R² Score")
+    plt.tight_layout()
+    st.pyplot(fig_cmp)
 
-  plt.tight_layout()
-  st.pyplot(fig_cmp)
+  with st.expander(
+      "📋 Klik untuk Buka Tabel Kinerja Evaluasi 5 Model", expanded=False
+  ):
+    comp_data = {
+        "Model": [
+            "Model A (Baseline RNN)",
+            "Model B (GA + RNN)",
+            "Model C (PSO + RNN)",
+            "Model D (GA + PSO + RNN)",
+            "Model E (Full Hybrid System)",
+        ],
+        "MAE": [0.1245, 0.0982, 0.0754, 0.0645, 0.0645],
+        "RMSE": [0.1589, 0.1210, 0.0963, 0.0813, 0.0813],
+        "R2 Score": [0.1852, 0.3120, 0.4015, 0.4713, 0.4713],
+    }
 
-  st.subheader("Tabel Kinerja Evaluasi 5 Model")
-  comp_data = {
-      "Model": [
-          "Model A (Baseline RNN)",
-          "Model B (GA + RNN)",
-          "Model C (PSO + RNN)",
-          "Model D (GA + PSO + RNN)",
-          "Model E (Full Hybrid System)",
-      ],
-      "MAE": [0.1245, 0.0982, 0.0754, 0.0645, 0.0645],
-      "RMSE": [0.1589, 0.1210, 0.0963, 0.0813, 0.0813],
-      "R2 Score": [0.1852, 0.3120, 0.4015, 0.4713, 0.4713],
-  }
-
-  if comp_res and isinstance(comp_res, dict):
-    try:
-      df_comp = pd.DataFrame(comp_res).T
-      st.dataframe(df_comp, use_container_width=True)
-    except Exception:
+    if comp_res and isinstance(comp_res, dict):
+      try:
+        df_comp = pd.DataFrame(comp_res).T
+        st.dataframe(df_comp, use_container_width=True)
+      except Exception:
+        st.dataframe(
+            pd.DataFrame(comp_data).set_index("Model"),
+            use_container_width=True,
+        )
+    else:
       st.dataframe(
           pd.DataFrame(comp_data).set_index("Model"), use_container_width=True
       )
-  else:
-    st.dataframe(
-        pd.DataFrame(comp_data).set_index("Model"), use_container_width=True
-    )
 
-  st.subheader("Keterangan Model:")
-  st.write("""
-    - **Model A (Baseline RNN):** Model RNN awal tanpa seleksi fitur dan optimasi hiperparameter.
-    - **Model B (GA + RNN):** Arsitektur RNN dengan masukan fitur terpilih dari GA.
-    - **Model C (PSO + RNN):** Arsitektur RNN dengan hiperparameter dioptimalkan oleh PSO.
-    - **Model D (GA + PSO + RNN):** Penggabungan GA (fitur) dan PSO (hiperparameter) pada RNN.
-    - **Model E (Full Hybrid System):** GA-PSO-RNN terintegrasi penuh dengan Fuzzy Inference System.
-    """)
+  with st.expander(
+      "📝 Klik untuk Buka Keterangan & Deskripsi Model A s/d Model E",
+      expanded=False,
+  ):
+    st.write("""
+        - **Model A (Baseline RNN):** Model RNN awal tanpa seleksi fitur dan optimasi hiperparameter.
+        - **Model B (GA + RNN):** Arsitektur RNN dengan masukan fitur terpilih dari GA.
+        - **Model C (PSO + RNN):** Arsitektur RNN dengan hiperparameter dioptimalkan oleh PSO.
+        - **Model D (GA + PSO + RNN):** Penggabungan GA (fitur) dan PSO (hiperparameter) pada RNN.
+        - **Model E (Full Hybrid System):** GA-PSO-RNN terintegrasi penuh dengan Fuzzy Inference System.
+        """)
