@@ -93,7 +93,8 @@ st.markdown("""
 def get_default_data():
     np.random.seed(42)
     rows = 500
-    time_index = pd.date_range("2004-03-10", periods=rows, freq="H")
+    # Perbaikan: freq='h' (huruf kecil) untuk kompatibilitas Pandas terbaru
+    time_index = pd.date_range("2004-03-10", periods=rows, freq="h")
     co = np.clip(np.random.lognormal(0.6, 0.5, rows), 0.1, 12.0)
     s1 = 1000 + 200 * np.sin(np.linspace(0, 20, rows)) + np.random.normal(0, 30, rows)
     c6h6 = np.clip(co * 3.5 + np.random.normal(0, 1, rows), 0.1, 50.0)
@@ -108,7 +109,6 @@ def get_default_data():
         'Date_Time': time_index, 'CO(GT)': co, 'PT08.S1(CO)': s1, 'C6H6(GT)': c6h6,
         'PT08.S2(NMHC)': s2, 'NOx(GT)': nox, 'PT08.S3(NOx)': s3, 'T': temp, 'RH': rh, 'AH': ah
     })
-    # Masukkan missing value -200 secara acak untuk disimulasikan
     mask = np.random.rand(*df.iloc[:, 1:].shape) < 0.05
     df.iloc[:, 1:] = df.iloc[:, 1:].mask(mask, -200)
     return df
@@ -176,11 +176,9 @@ st.write("")
 # ENGINE REAL TRAINING PIPELINE
 # ---------------------------------------------------------
 def run_real_hybrid_pipeline(df, target_column, ga_gens=10, pso_iters=8, rnn_epochs=20, progress_bar=None, status_box=None):
-    # 1. PREPROCESSING REAL
     df_clean = df.copy()
     numeric_cols = df_clean.select_dtypes(include=[np.number]).columns.tolist()
     
-    # Handling -200
     df_clean[numeric_cols] = df_clean[numeric_cols].replace(-200, np.nan)
     df_clean[numeric_cols] = df_clean[numeric_cols].interpolate(method='linear').ffill().bfill()
     
@@ -188,17 +186,16 @@ def run_real_hybrid_pipeline(df, target_column, ga_gens=10, pso_iters=8, rnn_epo
     X_raw = df_clean[feature_candidates].values
     y_raw = df_clean[target_column].values
     
-    # Normalize
     X_min, X_max = X_raw.min(axis=0), X_raw.max(axis=0)
     X_norm = (X_raw - X_min) / (X_max - X_min + 1e-8)
     y_min, y_max = y_raw.min(), y_raw.max()
     y_norm = (y_raw - y_min) / (y_max - y_min + 1e-8)
 
-    # 2. GA FEATURE SELECTION REAL
+    # GA Selection
     n_features = len(feature_candidates)
     pop_size = 10
     pop = np.random.randint(0, 2, size=(pop_size, n_features))
-    pop[:, :min(3, n_features)] = 1 # Pastikan minimal ada fitur aktif
+    pop[:, :min(3, n_features)] = 1
     
     ga_history = []
     best_chrom = pop[0]
@@ -211,7 +208,6 @@ def run_real_hybrid_pipeline(df, target_column, ga_gens=10, pso_iters=8, rnn_epo
             if np.sum(chrom) == 0: chrom[0] = 1
             selected_idx = np.where(chrom == 1)[0]
             
-            # Simple Evaluator (Sklearn Ridge/MLP)
             from sklearn.linear_model import Ridge
             model_ga = Ridge()
             split = int(len(X_norm) * 0.8)
@@ -232,7 +228,7 @@ def run_real_hybrid_pipeline(df, target_column, ga_gens=10, pso_iters=8, rnn_epo
     selected_indices = np.where(best_chrom == 1)[0]
     X_selected = X_norm[:, selected_indices]
 
-    # 3. PSO HYPERPARAMETER TUNING REAL
+    # PSO Optimization
     pso_history = []
     gbest_cost = 999.0
     gbest_params = {'seq_len': 8, 'hidden_units': 64, 'learning_rate': 0.003, 'dropout': 0.2}
@@ -240,13 +236,11 @@ def run_real_hybrid_pipeline(df, target_column, ga_gens=10, pso_iters=8, rnn_epo
     for p in range(pso_iters):
         if progress_bar: progress_bar.progress(30 + int((p + 1) / pso_iters * 40))
         
-        # Trial parameters
         cand_seq = int(np.random.choice([4, 6, 8, 12, 16]))
         cand_units = int(np.random.choice([32, 64, 84, 128]))
         cand_lr = float(np.random.choice([0.001, 0.003, 0.005]))
         cand_drop = float(np.random.choice([0.1, 0.2, 0.3]))
         
-        # Evaluate Cost
         split = int(len(X_selected) * 0.8)
         from sklearn.neural_network import MLPRegressor
         mlp = MLPRegressor(hidden_layer_sizes=(cand_units,), learning_rate_init=cand_lr, max_iter=20, random_state=42)
@@ -262,7 +256,7 @@ def run_real_hybrid_pipeline(df, target_column, ga_gens=10, pso_iters=8, rnn_epo
         if status_box: status_box.markdown(f"<div class='step-box' style='border-left-color: #f59e0b;'><b>[PSO STEP]</b> Iter {p+1}/{pso_iters} | Global Best RMSE: <b style='color:#f59e0b;'>{gbest_cost:.5f}</b></div>", unsafe_allow_html=True)
         time.sleep(0.02)
 
-    # 4. RNN TRAINING REAL
+    # RNN Training
     train_loss, val_loss = [], []
     split = int(len(X_selected) * 0.8)
     X_train, y_train = X_selected[:split], y_norm[:split]
@@ -279,7 +273,6 @@ def run_real_hybrid_pipeline(df, target_column, ga_gens=10, pso_iters=8, rnn_epo
                 return self.fc(out[:, -1, :])
         
         seq_len = gbest_params['seq_len']
-        # Reshape for sequence
         def create_seq(X_d, y_d, seq_l):
             Xs, ys = [], []
             for i in range(len(X_d) - seq_l):
@@ -318,7 +311,6 @@ def run_real_hybrid_pipeline(df, target_column, ga_gens=10, pso_iters=8, rnn_epo
             y_test_norm = y_v_seq.numpy()
             
     else:
-        # Fallback Scikit-Learn MLP
         from sklearn.neural_network import MLPRegressor
         mlp = MLPRegressor(hidden_layer_sizes=(gbest_params['hidden_units'],), max_iter=1, warm_start=True, random_state=42)
         for ep in range(rnn_epochs):
@@ -333,11 +325,9 @@ def run_real_hybrid_pipeline(df, target_column, ga_gens=10, pso_iters=8, rnn_epo
         preds_norm = mlp.predict(X_test)
         y_test_norm = y_test
 
-    # Denormalize Predictions
     preds_denorm = preds_norm * (y_max - y_min + 1e-8) + y_min
     y_test_denorm = y_test_norm * (y_max - y_min + 1e-8) + y_min
     
-    # Compute Final Real Metrics
     mae = float(np.mean(np.abs(y_test_denorm - preds_denorm)))
     rmse = float(np.sqrt(np.mean((y_test_denorm - preds_denorm)**2)))
     ss_res = np.sum((y_test_denorm - preds_denorm)**2)
@@ -346,7 +336,6 @@ def run_real_hybrid_pipeline(df, target_column, ga_gens=10, pso_iters=8, rnn_epo
 
     if progress_bar: progress_bar.progress(100)
     
-    # Save to session_state
     st.session_state.selected_features = selected_cols
     st.session_state.eliminated_features = eliminated_cols
     st.session_state.pso_params = gbest_params
@@ -617,7 +606,6 @@ elif menu == "7.🔮 Live Retrain & Sim":
             p_bar = st.progress(0)
             s_box = st.empty()
             
-            # RUNNING REAL ENGINE
             run_real_hybrid_pipeline(
                 st.session_state.df_raw, 
                 st.session_state.target_col, 
