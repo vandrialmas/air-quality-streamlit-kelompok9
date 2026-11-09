@@ -116,13 +116,15 @@ def get_default_data():
     df.iloc[:, 1:] = df.iloc[:, 1:].mask(mask, -200)
     return df
 
-# Inisialisasi State Aplikasi
+# Inisialisasi State Aplikasi (Independen & Aman)
+if "history_runs" not in st.session_state:
+    st.session_state.history_runs = []
+
 if "df_raw" not in st.session_state:
     st.session_state.df_raw = get_default_data()
     st.session_state.target_col = "CO(GT)"
     st.session_state.active_menu = "1.📌 Pipeline & System Overview"
     st.session_state.is_trained = False
-    st.session_state.history_runs = [] # Log Riwayat Training dalam Sesi
     
     st.session_state.selected_features = ['PT08.S1(CO)', 'C6H6(GT)', 'PT08.S2(NMHC)', 'NOx(GT)', 'T', 'RH']
     st.session_state.eliminated_features = ['PT08.S3(NOx)', 'AH']
@@ -133,12 +135,13 @@ if "df_raw" not in st.session_state:
     st.session_state.train_loss = [0.18, 0.12, 0.08, 0.05, 0.02, 0.006]
     st.session_state.val_loss = [0.19, 0.13, 0.09, 0.06, 0.03, 0.009]
     st.session_state.actual_pred = (np.linspace(1, 96, 96), 2.2 + 1.2*np.sin(np.linspace(1, 96, 96)/8), 2.2 + 1.15*np.sin(np.linspace(1, 96, 96)/8))
-    
-    # Catat run awal sebagai Initial Baseline Log
+
+# Pastikan default initial run selalu ada jika history_runs kosong
+if len(st.session_state.history_runs) == 0:
     st.session_state.history_runs.append({
         'Run #': 1,
         'Waktu Eksekusi': time.strftime("%H:%M:%S"),
-        'Target': 'CO(GT)',
+        'Target': st.session_state.get('target_col', 'CO(GT)'),
         'GA Gen': 10,
         'PSO Iter': 6,
         'RNN Epoch': 15,
@@ -366,7 +369,10 @@ def run_real_hybrid_pipeline(df, target_column, ga_gens=10, pso_iters=8, rnn_epo
     st.session_state.actual_pred = (np.arange(1, n_plot+1), y_test_denorm[:n_plot], preds_denorm[:n_plot])
     st.session_state.is_trained = True
 
-    # CATAT KE RIWAYAT SESI (LIVE HISTORY LOG)
+    # CATAT KE RIWAYAT SESI SECARA AMAN
+    if "history_runs" not in st.session_state:
+        st.session_state.history_runs = []
+        
     run_number = len(st.session_state.history_runs) + 1
     st.session_state.history_runs.append({
         'Run #': run_number,
@@ -790,7 +796,6 @@ elif menu == "7.🔮 Live Retrain & Sim":
             else: st.error(desc)
             st.markdown('</div>', unsafe_allow_html=True)
 
-    # TAB BARU: LOG RIWAYAT SESI PELATIHAN
     with tab_hist:
         st.markdown("""
         <div class="tb-card">
@@ -801,17 +806,21 @@ elif menu == "7.🔮 Live Retrain & Sim":
         </div>
         """, unsafe_allow_html=True)
         
-        df_hist = pd.DataFrame(st.session_state.history_runs)
-        st.dataframe(df_hist.set_index('Run #'), use_container_width=True)
-        
-        if len(df_hist) > 1:
-            st.markdown('<div class="tb-card"><div class="tb-card-header">📈 Perbandingan Progress RMSE Antar-Percobaan (Runs)</div>', unsafe_allow_html=True)
-            fig_h_cmp, ax_h_c = plt.subplots(figsize=(8, 2.5))
-            ax_h_c.plot(df_hist['Run #'], df_hist['RMSE'], marker='o', color='#34d399', linewidth=2)
-            ax_h_c.set_xlabel("Percobaan (Run #)")
-            ax_h_c.set_ylabel("RMSE Score")
-            st.pyplot(fig_h_cmp)
-            st.markdown('</div>', unsafe_allow_html=True)
+        hist_data = st.session_state.get("history_runs", [])
+        if hist_data:
+            df_hist = pd.DataFrame(hist_data)
+            st.dataframe(df_hist.set_index('Run #'), use_container_width=True)
+            
+            if len(df_hist) > 1:
+                st.markdown('<div class="tb-card"><div class="tb-card-header">📈 Perbandingan Progress RMSE Antar-Percobaan (Runs)</div>', unsafe_allow_html=True)
+                fig_h_cmp, ax_h_c = plt.subplots(figsize=(8, 2.5))
+                ax_h_c.plot(df_hist['Run #'], df_hist['RMSE'], marker='o', color='#34d399', linewidth=2)
+                ax_h_c.set_xlabel("Percobaan (Run #)")
+                ax_h_c.set_ylabel("RMSE Score")
+                st.pyplot(fig_h_cmp)
+                st.markdown('</div>', unsafe_allow_html=True)
+        else:
+            st.info("Belum ada riwayat pelatihan dalam sesi ini.")
 
     st.markdown(f"""
     <div class="explanation-box">
