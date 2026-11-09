@@ -123,7 +123,6 @@ if "df_raw" not in st.session_state:
     st.session_state.active_menu = "1.📌 Pipeline & System Overview"
     st.session_state.is_trained = False
     
-    # Static Default Initial Fallbacks
     st.session_state.selected_features = ['PT08.S1(CO)', 'C6H6(GT)', 'PT08.S2(NMHC)', 'NOx(GT)', 'T', 'RH']
     st.session_state.eliminated_features = ['PT08.S3(NOx)', 'AH']
     st.session_state.pso_params = {'seq_len': 8, 'hidden_units': 84, 'learning_rate': 0.003931, 'dropout': 0.2893}
@@ -393,7 +392,6 @@ if menu == "1.📌 Pipeline & System Overview":
     with k3: st.markdown(f'<div class="tb-kpi-box"><div class="tb-kpi-title">RNN Best RMSE</div><div class="tb-kpi-val" style="color:#34d399;">{st.session_state.metrics["rmse"]:.4f}</div><div class="tb-kpi-sub">Test Performance</div></div>', unsafe_allow_html=True)
     with k4: st.markdown('<div class="tb-kpi-box"><div class="tb-kpi-title">Fuzzy Decision</div><div class="tb-kpi-val" style="color:#f43f5e;">Center of Gravity</div><div class="tb-kpi-sub">Mamdani Defuzzifier</div></div>', unsafe_allow_html=True)
 
-    # DYNAMIC REAL-TIME EXPLANATION BOX
     st.markdown(f"""
     <div class="explanation-box">
         💡 <b>Analisis & Interpretasi Hasil Real-Time:</b><br>
@@ -459,7 +457,6 @@ elif menu == "2.📊 Data Telemetry Explorer":
         st.dataframe(df_curr.head(5), use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # DYNAMIC REAL-TIME EXPLANATION BOX
     mean_val = clean_target.mean() if len(clean_target) > 0 else 0
     max_val = clean_target.max() if len(clean_target) > 0 else 0
     st.markdown(f"""
@@ -504,7 +501,6 @@ elif menu == "3.🧬 Genetic Algorithm (GA) Detail":
     st.pyplot(fig_ga)
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # DYNAMIC REAL-TIME EXPLANATION BOX
     last_ga_fit = st.session_state.ga_history[-1] if len(st.session_state.ga_history) > 0 else 0
     st.markdown(f"""
     <div class="explanation-box">
@@ -542,7 +538,6 @@ elif menu == "4.🐝 PSO Hyperparameter Detail":
     st.pyplot(fig_pso)
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # DYNAMIC REAL-TIME EXPLANATION BOX
     last_pso_cost = st.session_state.pso_history[-1] if len(st.session_state.pso_history) > 0 else 0
     st.markdown(f"""
     <div class="explanation-box">
@@ -593,7 +588,6 @@ elif menu == "5.🧠 Neural Network (RNN) Architecture":
         st.pyplot(fig_p)
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # DYNAMIC REAL-TIME EXPLANATION BOX
     last_t_loss = st.session_state.train_loss[-1] if len(st.session_state.train_loss) > 0 else 0
     last_v_loss = st.session_state.val_loss[-1] if len(st.session_state.val_loss) > 0 else 0
     st.markdown(f"""
@@ -637,7 +631,6 @@ elif menu == "6.🎛️ Fuzzy Logic Interpretability":
     }
     st.dataframe(pd.DataFrame(fuzzy_rules), use_container_width=True)
 
-    # DYNAMIC REAL-TIME EXPLANATION BOX
     st.markdown(f"""
     <div class="explanation-box">
         💡 <b>Analisis & Interpretasi Logika Fuzzy Real-Time:</b><br>
@@ -683,7 +676,65 @@ elif menu == "7.🔮 Live Retrain & Sim":
                 status_box=s_box
             )
             
-            st.success("🎉 PIPELINE REAL HYBRID BERHASIL DIJALANKAN! Seluruh grafik di Menu 1 - 8 telah diperbarui secara otomatis berdasarkan dataset baru.")
+            st.success("🎉 PIPELINE REAL HYBRID BERHASIL DIJALANKAN! Seluruh hasil dan grafik telah diperbarui di bawah ini secara real-time.")
+
+        # =================================------------------------
+        # DISPLAY GRAFIK LANGSUNG DI MENU 7 SETELAH RUNNING FINISHED
+        # =================================------------------------
+        st.markdown("---")
+        st.markdown("<h4 style='color:#38bdf8;'>📊 Hasil Grafik Real-Time Training Pipeline</h4>", unsafe_allow_html=True)
+        
+        # 1. Ringkasan Metrik KPI
+        m_sim = st.session_state.metrics
+        kpi1, kpi2, kpi3 = st.columns(3)
+        with kpi1: st.markdown(f'<div class="tb-kpi-box"><div class="tb-kpi-title">Test MAE Score</div><div class="tb-kpi-val" style="color:#38bdf8;">{m_sim["mae"]:.4f}</div></div>', unsafe_allow_html=True)
+        with kpi2: st.markdown(f'<div class="tb-kpi-box"><div class="tb-kpi-title">Test RMSE Score</div><div class="tb-kpi-val" style="color:#34d399;">{m_sim["rmse"]:.4f}</div></div>', unsafe_allow_html=True)
+        with kpi3: st.markdown(f'<div class="tb-kpi-box"><div class="tb-kpi-title">Test R² Score</div><div class="tb-kpi-val" style="color:#f59e0b;">{m_sim["r2"]:.4f}</div></div>', unsafe_allow_html=True)
+        
+        st.write("")
+        # 2. Row 1 Graphs: GA & PSO Convergence
+        cg1, cg2 = st.columns(2)
+        with cg1:
+            st.markdown('<div class="tb-card"><div class="tb-card-header">📈 GA Best Fitness Convergence</div>', unsafe_allow_html=True)
+            fig_g_live, ax_g_l = plt.subplots(figsize=(6, 2.8))
+            ax_g_l.plot(range(1, len(st.session_state.ga_history)+1), st.session_state.ga_history, marker='o', color='#38bdf8', linewidth=2)
+            ax_g_l.set_xlabel("Generasi GA")
+            ax_g_l.set_ylabel("MSE Loss")
+            st.pyplot(fig_g_live)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        with cg2:
+            st.markdown('<div class="tb-card"><div class="tb-card-header">📈 PSO Global Best RMSE Trajectory</div>', unsafe_allow_html=True)
+            fig_p_live, ax_p_l = plt.subplots(figsize=(6, 2.8))
+            ax_p_l.plot(range(1, len(st.session_state.pso_history)+1), st.session_state.pso_history, marker='s', color='#f59e0b', linewidth=2)
+            ax_p_l.set_xlabel("Iterasi Swarm PSO")
+            ax_p_l.set_ylabel("Global Best RMSE")
+            st.pyplot(fig_p_live)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        # 3. Row 2 Graphs: RNN Training Loss & Actual vs Predicted
+        cr1, cr2 = st.columns(2)
+        with cr1:
+            st.markdown('<div class="tb-card"><div class="tb-card-header">📉 RNN Epoch Training vs Validation Loss</div>', unsafe_allow_html=True)
+            fig_l_live, ax_l_l = plt.subplots(figsize=(6, 2.8))
+            ax_l_l.plot(range(1, len(st.session_state.train_loss)+1), st.session_state.train_loss, color='#38bdf8', label='Train Loss')
+            ax_l_l.plot(range(1, len(st.session_state.val_loss)+1), st.session_state.val_loss, color='#f43f5e', label='Val Loss', linestyle='--')
+            ax_l_l.set_xlabel("Epoch RNN")
+            ax_l_l.set_ylabel("MSE Loss")
+            ax_l_l.legend()
+            st.pyplot(fig_l_live)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        with cr2:
+            st.markdown('<div class="tb-card"><div class="tb-card-header">🔮 Hasil Peramalan RNN vs Data Aktual</div>', unsafe_allow_html=True)
+            fig_pred_live, ax_pr_l = plt.subplots(figsize=(6, 2.8))
+            hrs_l, act_l, prd_l = st.session_state.actual_pred
+            ax_pr_l.plot(hrs_l, act_l, color='#cbd5e1', label='Aktual')
+            ax_pr_l.plot(hrs_l, prd_l, color='#34d399', label='Prediksi RNN', linestyle='--')
+            ax_pr_l.set_xlabel("Sampel Waktu")
+            ax_pr_l.legend()
+            st.pyplot(fig_pred_live)
+            st.markdown('</div>', unsafe_allow_html=True)
 
     with tab_act:
         col_sim1, col_sim2 = st.columns([1, 1])
@@ -714,7 +765,6 @@ elif menu == "7.🔮 Live Retrain & Sim":
             else: st.error(desc)
             st.markdown('</div>', unsafe_allow_html=True)
 
-    # DYNAMIC REAL-TIME EXPLANATION BOX
     st.markdown(f"""
     <div class="explanation-box">
         💡 <b>Analisis & Interpretasi Simulasi Real-Time:</b><br>
@@ -752,7 +802,6 @@ elif menu == "8.📈 Benchmark Model Comparison":
     }
     st.dataframe(pd.DataFrame(comp_data).set_index('Model Pipeline Architecture'), use_container_width=True)
 
-    # DYNAMIC REAL-TIME EXPLANATION BOX
     pct_impr = ((rmse_list[0] - rmse_list[4]) / rmse_list[0]) * 100
     st.markdown(f"""
     <div class="explanation-box">
