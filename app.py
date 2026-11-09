@@ -14,7 +14,8 @@ from fuzzy_system import compute_fuzzy_risk
 st.set_page_config(
     page_title="ThingsBoard IoT - Air Quality Hybrid System",
     page_icon="📡",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="collapsed"
 )
 
 # Dark Theme Styling Matplotlib
@@ -33,26 +34,36 @@ plt.rcParams.update({
     'ytick.color': '#94a3b8'
 })
 
-# Custom CSS ThingsBoard Dark Theme
+# Custom CSS: Menyembunyikan Sidebar & Membuat Top Navigation Bar
 st.markdown("""
 <style>
-    .stApp { background-color: #0b0f19 !important; color: #f8fafc; }
-    [data-testid="stSidebar"] { background-color: #0f172a !important; border-right: 1px solid #1e293b; }
+    /* Sembunyikan Sidebar Kiri */
+    [data-testid="stSidebar"] {
+        display: none !important;
+    }
     
-    .tb-header {
+    .stApp { background-color: #0b0f19 !important; color: #f8fafc; }
+    
+    /* Top Header Bar */
+    .tb-topbar {
         background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
         border: 1px solid #334155;
         border-radius: 10px;
         padding: 16px 24px;
-        margin-bottom: 20px;
+        margin-bottom: 15px;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
     .tb-title { font-size: 22px; font-weight: 700; color: #38bdf8; margin: 0; }
     .tb-subtitle { font-size: 13px; color: #94a3b8; margin-top: 4px; }
     .tb-status-badge {
-        background-color: #064e3b; color: #34d399; padding: 4px 12px;
-        border-radius: 20px; font-size: 11px; font-weight: 600; border: 1px solid #059669;
+        background-color: #064e3b; color: #34d399; padding: 6px 16px;
+        border-radius: 20px; font-size: 12px; font-weight: 600; border: 1px solid #059669;
     }
+    
+    /* Card Styles */
     .tb-card {
         background-color: #1e293b; border: 1px solid #334155;
         border-radius: 10px; padding: 18px; margin-bottom: 18px;
@@ -90,41 +101,40 @@ def load_artifacts():
 
 ga_res, pso_res, comp_res, scaler = load_artifacts()
 
-# SIDEBAR NAVIGASI
-st.sidebar.markdown("### 📡 ThingsBoard Telemetry")
-st.sidebar.markdown("<span class='tb-status-badge'>🟢 SYSTEM ONLINE</span>", unsafe_allow_html=True)
-st.sidebar.write("---")
+# ---------------------------------------------------------
+# TOPBAR (HEADER ATAS & STATUS SYSTEM)
+# ---------------------------------------------------------
+st.markdown("""
+<div class="tb-topbar">
+    <div>
+        <div class="tb-title">📡 ThingsBoard Telemetry Dashboard</div>
+        <div class="tb-subtitle">Kelompok 9 - Intelligent Air Pollution Forecasting System (UCI ID 360)</div>
+    </div>
+    <div>
+        <span class="tb-status-badge">🟢 SYSTEM ONLINE</span>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
-menu = st.sidebar.radio(
-    "Pilih Modul Dashboard:",
-    [
-        "1.📌 Pipeline & System Overview",
-        "2.📊 Data Telemetry Explorer",
-        "3.🧬 Genetic Algorithm (GA) Detail",
-        "4.🐝 PSO Hyperparameter Detail",
-        "5.🧠 Neural Network (RNN) Architecture",
-        "6.🎛️ Fuzzy Logic Interpretability",
-        "7.🔮 Actuator & Simulation",
-        "8.📈 Benchmark Model Comparison"
-    ]
-)
+# NAVIGASI MENU DI BAGIAN ATAS
+menu_options = [
+    "1.📌 Pipeline & System Overview",
+    "2.📊 Data Telemetry Explorer",
+    "3.🧬 Genetic Algorithm (GA) Detail",
+    "4.🐝 PSO Hyperparameter Detail",
+    "5.🧠 Neural Network (RNN) Architecture",
+    "6.🎛️ Fuzzy Logic Interpretability",
+    "7.🔮 Actuator & Simulation",
+    "8.📈 Benchmark Model Comparison"
+]
+
+menu = st.selectbox("📂 Pilih Modul Dashboard / Telemetry Module:", menu_options, index=0)
+st.write("")
 
 # ---------------------------------------------------------
 # MENU 1: PIPELINE & SYSTEM OVERVIEW
 # ---------------------------------------------------------
 if menu == "1.📌 Pipeline & System Overview":
-    st.markdown("""
-    <div class="tb-header">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <div class="tb-title">📡 Kelompok 9 - Intelligent Air Pollution Forecasting System</div>
-                <div class="tb-subtitle">Hybrid Intelligent System: GA - PSO - RNN - Fuzzy Logic - Streamlit</div>
-            </div>
-            <span class="tb-status-badge">NODE: UCI-AIR-QUALITY-360</span>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
     col1, col2 = st.columns([2, 1])
     with col1:
         st.markdown("""
@@ -165,13 +175,6 @@ if menu == "1.📌 Pipeline & System Overview":
 # ---------------------------------------------------------
 elif menu == "2.📊 Data Telemetry Explorer":
     st.markdown("""
-    <div class="tb-header">
-        <div class="tb-title">📊 Dataset Telemetry Explorer (UCI Air Quality ID 360)</div>
-        <div class="tb-subtitle">Eksplorasi Atribut Sensor & Penanganan Missing Value (-200)</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("""
     <div class="tb-card">
         <div class="tb-card-header">🔍 Strategi Pembersihan Missing Values (-200)</div>
         <p style="font-size:12px; color:#cbd5e1;">
@@ -211,13 +214,6 @@ elif menu == "2.📊 Data Telemetry Explorer":
 # MENU 3: GA FEATURE SELECTION DETAIL
 # ---------------------------------------------------------
 elif menu == "3.🧬 Genetic Algorithm (GA) Detail":
-    st.markdown("""
-    <div class="tb-header">
-        <div class="tb-title">🧬 Genetic Algorithm (GA) Feature Selection</div>
-        <div class="tb-subtitle">Laporan Lengkap: Chromosome, Fitness, Parameter GA, Convergence Curve, & Fitur Terpilih</div>
-    </div>
-    """, unsafe_allow_html=True)
-
     selected_feats = ['PT08.S1(CO)', 'C6H6(GT)', 'PT08.S2(NMHC)', 'NOx(GT)', 'T', 'RH']
     eliminated_feats = ['PT08.S3(NOx)', 'PT08.S4(NO2)', 'AH']
     best_fit = 0.0743
@@ -291,13 +287,6 @@ elif menu == "3.🧬 Genetic Algorithm (GA) Detail":
 # MENU 4: PSO HYPERPARAMETER DETAIL
 # ---------------------------------------------------------
 elif menu == "4.🐝 PSO Hyperparameter Detail":
-    st.markdown("""
-    <div class="tb-header">
-        <div class="tb-title">🐝 Particle Swarm Optimization (PSO) Hyperparameter Tuning</div>
-        <div class="tb-subtitle">Laporan Lengkap: Ruang Pencarian, Parameter Swarm, Global Best, Convergence Curve, & Konfigurasi Terbaik</div>
-    </div>
-    """, unsafe_allow_html=True)
-
     seq_len = 8
     hidden_u = 84
     lr_val = 0.003931
@@ -357,13 +346,6 @@ elif menu == "4.🐝 PSO Hyperparameter Detail":
 # ---------------------------------------------------------
 elif menu == "5.🧠 Neural Network (RNN) Architecture":
     st.markdown("""
-    <div class="tb-header">
-        <div class="tb-title">🧠 Recurrent Neural Network (RNN) Architecture</div>
-        <div class="tb-subtitle">Spesifikasi Arsitektur Model & Alasan Pemilihan Arsitektur</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("""
     <div class="tb-card">
         <div class="tb-card-header">💡 1. Alasan Pemilihan Arsitektur Recurrent Neural Network (RNN)</div>
         <p style="font-size:12px; color:#cbd5e1; line-height:1.6;">
@@ -404,10 +386,6 @@ elif menu == "5.🧠 Neural Network (RNN) Architecture":
 # MENU 6: FUZZY LOGIC INTERPRETABILITY
 # ---------------------------------------------------------
 elif menu == "6.🎛️ Fuzzy Logic Interpretability":
-    st.header("🎛️ Fuzzy Logic Decision Interpretability")
-    st.write("Interpretasi Hasil Prediksi melalui 5 Komponen Logika Fuzzy Mamdani.")
-    st.divider()
-
     st.markdown('<div class="tb-card"><div class="tb-card-header">📐 1. Linguistic Variables & 2. Membership Functions</div>', unsafe_allow_html=True)
     st.write("• **Input Variable:** Konsentrasi CO (mg/m³) | • **Output Variable:** Health Risk Index Score (0 - 100)")
     
@@ -446,9 +424,6 @@ elif menu == "6.🎛️ Fuzzy Logic Interpretability":
 # MENU 7: ACTUATOR & SIMULATION
 # ---------------------------------------------------------
 elif menu == "7.🔮 Actuator & Simulation":
-    st.header("🔮 Simulasi Inferensi Hybrid Real-Time")
-    st.divider()
-
     col_sim1, col_sim2 = st.columns([1, 1])
     with col_sim1:
         st.markdown('<div class="tb-card"><div class="tb-card-header">🎛️ Input Parameter Slider CO</div>', unsafe_allow_html=True)
@@ -481,9 +456,6 @@ elif menu == "7.🔮 Actuator & Simulation":
 # MENU 8: BENCHMARK MODEL COMPARISON
 # ---------------------------------------------------------
 elif menu == "8.📈 Benchmark Model Comparison":
-    st.header("📈 Perbandingan 5 Model Pembanding Wajib")
-    st.divider()
-
     st.markdown('<div class="tb-card"><div class="tb-card-header">📊 Visualisasi Perbandingan Evaluasi Metrik</div>', unsafe_allow_html=True)
     fig_cmp, (ax_rmse, ax_r2) = plt.subplots(1, 2, figsize=(10, 3.2))
     models_label = ['Model A\n(RNN)', 'Model B\n(GA+RNN)', 'Model C\n(PSO+RNN)', 'Model D\n(GA+PSO+RNN)', 'Model E\n(Full Hybrid)']
