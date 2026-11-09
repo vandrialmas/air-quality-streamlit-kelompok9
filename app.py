@@ -122,6 +122,7 @@ if "df_raw" not in st.session_state:
     st.session_state.target_col = "CO(GT)"
     st.session_state.active_menu = "1.📌 Pipeline & System Overview"
     st.session_state.is_trained = False
+    st.session_state.history_runs = [] # Log Riwayat Training dalam Sesi
     
     st.session_state.selected_features = ['PT08.S1(CO)', 'C6H6(GT)', 'PT08.S2(NMHC)', 'NOx(GT)', 'T', 'RH']
     st.session_state.eliminated_features = ['PT08.S3(NOx)', 'AH']
@@ -132,6 +133,20 @@ if "df_raw" not in st.session_state:
     st.session_state.train_loss = [0.18, 0.12, 0.08, 0.05, 0.02, 0.006]
     st.session_state.val_loss = [0.19, 0.13, 0.09, 0.06, 0.03, 0.009]
     st.session_state.actual_pred = (np.linspace(1, 96, 96), 2.2 + 1.2*np.sin(np.linspace(1, 96, 96)/8), 2.2 + 1.15*np.sin(np.linspace(1, 96, 96)/8))
+    
+    # Catat run awal sebagai Initial Baseline Log
+    st.session_state.history_runs.append({
+        'Run #': 1,
+        'Waktu Eksekusi': time.strftime("%H:%M:%S"),
+        'Target': 'CO(GT)',
+        'GA Gen': 10,
+        'PSO Iter': 6,
+        'RNN Epoch': 15,
+        'Fitur Terpilih': '6/8 Sensor',
+        'MAE': 0.0645,
+        'RMSE': 0.0813,
+        'R² Score': 0.4713
+    })
 
 # ---------------------------------------------------------
 # TOPBAR HEADER
@@ -350,6 +365,21 @@ def run_real_hybrid_pipeline(df, target_column, ga_gens=10, pso_iters=8, rnn_epo
     n_plot = min(96, len(preds_denorm))
     st.session_state.actual_pred = (np.arange(1, n_plot+1), y_test_denorm[:n_plot], preds_denorm[:n_plot])
     st.session_state.is_trained = True
+
+    # CATAT KE RIWAYAT SESI (LIVE HISTORY LOG)
+    run_number = len(st.session_state.history_runs) + 1
+    st.session_state.history_runs.append({
+        'Run #': run_number,
+        'Waktu Eksekusi': time.strftime("%H:%M:%S"),
+        'Target': target_column,
+        'GA Gen': ga_gens,
+        'PSO Iter': pso_iters,
+        'RNN Epoch': rnn_epochs,
+        'Fitur Terpilih': f"{len(selected_cols)}/{len(feature_candidates)} Sensor",
+        'MAE': round(mae, 4),
+        'RMSE': round(rmse, 4),
+        'R² Score': round(r2, 4)
+    })
 
 # ---------------------------------------------------------
 # MENU 1: PIPELINE & SYSTEM OVERVIEW
@@ -643,7 +673,7 @@ elif menu == "6.🎛️ Fuzzy Logic Interpretability":
 # MENU 7: LIVE RETRAIN & SIMULATION ENGINE
 # ---------------------------------------------------------
 elif menu == "7.🔮 Live Retrain & Sim":
-    tab_sim, tab_act = st.tabs(["🚀 Real Live Training Engine (Dataset Aktif)", "🎛️ Dynamic Fuzzy Actuator"])
+    tab_sim, tab_act, tab_hist = st.tabs(["🚀 Real Live Training Engine", "🎛️ Dynamic Fuzzy Actuator", "📜 Session Training History Log"])
     
     with tab_sim:
         st.markdown("""
@@ -676,15 +706,12 @@ elif menu == "7.🔮 Live Retrain & Sim":
                 status_box=s_box
             )
             
-            st.success("🎉 PIPELINE REAL HYBRID BERHASIL DIJALANKAN! Seluruh hasil dan grafik telah diperbarui di bawah ini secara real-time.")
+            st.success("🎉 PIPELINE REAL HYBRID BERHASIL DIJALANKAN! Percobaan telah dicatat ke dalam History Log Sesi.")
 
-        # =================================------------------------
-        # DISPLAY GRAFIK LANGSUNG DI MENU 7 SETELAH RUNNING FINISHED
-        # =================================------------------------
+        # DISPLAY GRAFIK LIVE RESULTS
         st.markdown("---")
-        st.markdown("<h4 style='color:#38bdf8;'>📊 Hasil Grafik Real-Time Training Pipeline</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color:#38bdf8;'>📊 Hasil Grafik Real-Time Training Pipeline (Run Terbaru)</h4>", unsafe_allow_html=True)
         
-        # 1. Ringkasan Metrik KPI
         m_sim = st.session_state.metrics
         kpi1, kpi2, kpi3 = st.columns(3)
         with kpi1: st.markdown(f'<div class="tb-kpi-box"><div class="tb-kpi-title">Test MAE Score</div><div class="tb-kpi-val" style="color:#38bdf8;">{m_sim["mae"]:.4f}</div></div>', unsafe_allow_html=True)
@@ -692,7 +719,6 @@ elif menu == "7.🔮 Live Retrain & Sim":
         with kpi3: st.markdown(f'<div class="tb-kpi-box"><div class="tb-kpi-title">Test R² Score</div><div class="tb-kpi-val" style="color:#f59e0b;">{m_sim["r2"]:.4f}</div></div>', unsafe_allow_html=True)
         
         st.write("")
-        # 2. Row 1 Graphs: GA & PSO Convergence
         cg1, cg2 = st.columns(2)
         with cg1:
             st.markdown('<div class="tb-card"><div class="tb-card-header">📈 GA Best Fitness Convergence</div>', unsafe_allow_html=True)
@@ -712,7 +738,6 @@ elif menu == "7.🔮 Live Retrain & Sim":
             st.pyplot(fig_p_live)
             st.markdown('</div>', unsafe_allow_html=True)
 
-        # 3. Row 2 Graphs: RNN Training Loss & Actual vs Predicted
         cr1, cr2 = st.columns(2)
         with cr1:
             st.markdown('<div class="tb-card"><div class="tb-card-header">📉 RNN Epoch Training vs Validation Loss</div>', unsafe_allow_html=True)
@@ -763,6 +788,29 @@ elif menu == "7.🔮 Live Retrain & Sim":
             elif label == "Moderate": st.warning(desc)
             elif label == "Unhealthy": st.warning(desc)
             else: st.error(desc)
+            st.markdown('</div>', unsafe_allow_html=True)
+
+    # TAB BARU: LOG RIWAYAT SESI PELATIHAN
+    with tab_hist:
+        st.markdown("""
+        <div class="tb-card">
+            <div class="tb-card-header">📜 Log Riwayat Percobaan Running Sesi Aktif</div>
+            <p style="font-size:12px; color:#cbd5e1;">
+            Berikut adalah catatan seluruh percobaan pelatihan live yang telah Anda jalankan selama sesi ini.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        df_hist = pd.DataFrame(st.session_state.history_runs)
+        st.dataframe(df_hist.set_index('Run #'), use_container_width=True)
+        
+        if len(df_hist) > 1:
+            st.markdown('<div class="tb-card"><div class="tb-card-header">📈 Perbandingan Progress RMSE Antar-Percobaan (Runs)</div>', unsafe_allow_html=True)
+            fig_h_cmp, ax_h_c = plt.subplots(figsize=(8, 2.5))
+            ax_h_c.plot(df_hist['Run #'], df_hist['RMSE'], marker='o', color='#34d399', linewidth=2)
+            ax_h_c.set_xlabel("Percobaan (Run #)")
+            ax_h_c.set_ylabel("RMSE Score")
+            st.pyplot(fig_h_cmp)
             st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown(f"""
